@@ -1,0 +1,7 @@
+{
+  "name": "glide-tasks",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "d1_databases": [{"binding":"DB","database_name":"glide-tasks","database_id":"REPLACE_WITH_CREATED_D1_ID","migrations_dir":"drizzle"}],
+  "ai": {"binding":"AI"}
+}

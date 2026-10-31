@@ -1,0 +1,21 @@
+name: Glide CI
+on:
+  push:
+    branches: [glide-tasks]
+    paths: ['glide-tasks/**', '.github/workflows/glide-ci.yml']
+  pull_request:
+    paths: ['glide-tasks/**']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: glide-tasks
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm run build && npm test && npm run validate

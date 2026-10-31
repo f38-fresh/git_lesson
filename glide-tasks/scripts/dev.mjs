@@ -1,0 +1,10 @@
+import http from 'node:http';
+import {execFileSync} from 'node:child_process';
+import {watch} from 'node:fs';
+execFileSync(process.execPath,['scripts/build.mjs'],{stdio:'inherit'});
+let worker=(await import('../worker/index.js?'+Date.now())).default;
+let timer;
+watch('src',()=>{clearTimeout(timer);timer=setTimeout(async()=>{try{execFileSync(process.execPath,['scripts/build.mjs'],{stdio:'inherit'});worker=(await import('../worker/index.js?'+Date.now())).default}catch(e){console.error('Build failed')}},150)});
+const server=http.createServer(async(req,res)=>{try{if(req.url.startsWith('/__qa/mobile')){const w=Number(new URL(req.url,'http://local').searchParams.get('width'))||390;res.writeHead(200,{'Content-Type':'text/html'});res.end('<!doctype html><title>Glide mobile QA</title><body style="margin:0;background:#e0e3eb"><iframe title="Glide mobile" src="/" style="border:0;display:block;margin:0 auto;width:'+Math.min(900,Math.max(300,w))+'px;height:850px"></iframe></body>');return}const origin='http://'+req.headers.host;const chunks=[];for await(const chunk of req)chunks.push(chunk);const request=new Request(origin+req.url,{method:req.method,headers:req.headers,body:!['GET','HEAD'].includes(req.method)?Buffer.concat(chunks):undefined});const response=await worker.fetch(request,{},{});const headers=Object.fromEntries(response.headers);headers['x-frame-options']='SAMEORIGIN';headers['content-security-policy']=headers['content-security-policy']?.replace("frame-ancestors 'none'","frame-ancestors 'self'");res.writeHead(response.status,headers);res.end(Buffer.from(await response.arrayBuffer()))}catch{res.writeHead(500);res.end('Preview error')}});
+const portArg=process.argv.indexOf('--port');
+server.listen(Number(portArg>=0?process.argv[portArg+1]:process.env.PORT)||3000,'0.0.0.0',()=>console.log('Glide preview ready'));

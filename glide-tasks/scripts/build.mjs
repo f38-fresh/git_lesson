@@ -1,0 +1,11 @@
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+const css=await readFile('src/style.css','utf8'),js=await readFile('src/app.js','utf8');
+const html=(await readFile('src/index.html','utf8')).replace('/*CSS*/',()=>css).replace('/*JS*/',()=>js);
+const hash=createHash('sha256').update(js).digest('base64');
+const server=(await readFile('src/server.js','utf8')).replace('__SCRIPT_HASH__',hash);
+const sw=await readFile('src/sw.js','utf8');
+const bundled='const APP_HTML='+JSON.stringify(html)+';\nconst SERVICE_WORKER='+JSON.stringify(sw)+';\n'+server;
+await mkdir('worker',{recursive:true});await writeFile('worker/index.js',bundled);
+await mkdir('dist/server',{recursive:true});await mkdir('dist/.openai',{recursive:true});await writeFile('dist/server/index.js',bundled);await writeFile('dist/.openai/hosting.json',await readFile('.openai/hosting.json','utf8'));
+console.log('Built Glide Worker ('+Buffer.byteLength(bundled)+' bytes)');
